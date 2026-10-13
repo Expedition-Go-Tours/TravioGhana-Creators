@@ -128,7 +128,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 20px;
 }
 .topbar-left { display: flex; align-items: center; gap: 16px; }
 .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-tertiary); }
@@ -156,7 +156,7 @@
 /* ── Content ── */
 .content {
   flex: 1;
-  padding: 28px 32px 60px;
+  padding: 28px 20px 60px;
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;

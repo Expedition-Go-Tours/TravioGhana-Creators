@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -64,6 +64,11 @@ export default function DashboardLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [location.pathname])
 
   return (
     <div className="shell">

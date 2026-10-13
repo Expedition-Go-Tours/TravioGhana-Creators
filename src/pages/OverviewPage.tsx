@@ -363,22 +363,56 @@ export default function OverviewPage() {
           <div className="section-header">
             <div>
               <div className="section-title">Quick Actions</div>
-              <div className="section-sub">Common tasks</div>
+              <div className="section-sub">Jump to common tasks</div>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Link to="/creator/links" className="btn btn-primary" style={{ justifyContent: 'flex-start' }}>
-              <Link2 size={18} /> Generate Referral Link
-            </Link>
-            <Link to="/creator/discover" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-              <Compass size={18} /> Browse Experiences
-            </Link>
-            <Link to="/creator/reports" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-              <FileText size={18} /> View Analytics Report
-            </Link>
-            <Link to="/creator/payouts" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-              <Wallet size={18} /> Request Payout
-            </Link>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { icon: Link2, title: 'Generate Link', desc: 'Create a new referral link', to: '/creator/links', primary: true, color: 'var(--green)', bg: 'var(--green-bg)' },
+              { icon: Compass, title: 'Browse Tours', desc: 'Find new experiences', to: '/creator/discover', primary: false, color: 'var(--blue)', bg: 'var(--blue-bg)' },
+              { icon: FileText, title: 'View Reports', desc: 'Analytics & insights', to: '/creator/reports', primary: false, color: 'var(--orange)', bg: 'var(--orange-bg)' },
+              { icon: Wallet, title: 'Request Payout', desc: 'Withdraw your earnings', to: '/creator/payouts', primary: false, color: 'var(--green)', bg: 'var(--green-bg)' },
+            ].map((action) => (
+              <motion.div
+                key={action.title}
+                whileHover={{ y: -2, boxShadow: 'var(--shadow-md)' }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <Link
+                  to={action.to}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    padding: '16px',
+                    borderRadius: 'var(--r-lg)',
+                    border: '1px solid ' + (action.primary ? 'var(--green)' : 'var(--border)'),
+                    background: action.primary ? 'var(--green-bg)' : 'var(--bg-surface)',
+                    height: '100%',
+                    transition: 'border-color 0.2s',
+                  }}
+                >
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: action.bg,
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}>
+                    <action.icon size={18} color={action.color} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                      {action.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                      {action.desc}
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>

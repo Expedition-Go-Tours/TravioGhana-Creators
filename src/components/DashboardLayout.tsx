@@ -166,7 +166,7 @@ export default function DashboardLayout() {
               bottom: 80,
               left: 16,
               width: 240,
-              background: 'var(--bg-elevated)',
+              background: '#fff',
               border: '1px solid var(--border)',
               borderRadius: 'var(--r-lg)',
               boxShadow: 'var(--shadow-lg)',

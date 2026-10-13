@@ -21,10 +21,10 @@ const monthlyData = [
 ]
 
 const breakdown = [
-  { name: 'Your commission', value: 3780, color: '#10b981' },
+  { name: 'Your commission', value: 3780, color: '#087747' },
   { name: 'Platform fee', value: 2800, color: '#f59e0b' },
   { name: 'Refunds', value: 280, color: '#ef4444' },
-  { name: 'Pending', value: 3200, color: '#3b82f6' },
+  { name: 'Pending', value: 3200, color: '#3463e8' },
 ]
 
 const SUMMARY = [
@@ -55,7 +55,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+      background: '#fff', border: '1px solid var(--border)',
       borderRadius: 'var(--r-md)', padding: '10px 14px', boxShadow: 'var(--shadow-lg)',
     }}>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{label}</div>
@@ -117,12 +117,12 @@ export default function EarningsPage() {
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlyData} barGap={8}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(21,32,29,.06)" />
               <XAxis dataKey="month" stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="earned" name="Earned" fill="#10b981" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="payouts" name="Payouts" fill="#22d3ee" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="earned" name="Earned" fill="#087747" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="payouts" name="Payouts" fill="#3463e8" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>

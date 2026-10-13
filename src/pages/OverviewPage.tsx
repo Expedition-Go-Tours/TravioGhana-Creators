@@ -75,7 +75,7 @@ function StatCard({ icon: Icon, value, label, delta, up, variant }: {
   label: string
   delta: string
   up: boolean
-  variant: 'green' | 'dark' | 'orange' | 'blue' | 'purple'
+  variant: 'green' | 'dark' | 'mint' | 'orange'
 }) {
   return (
     <motion.div variants={item} className={`stat-card stat-card--${variant}`}>
@@ -96,7 +96,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: 'var(--bg-elevated)',
+      background: '#fff',
       border: '1px solid var(--border)',
       borderRadius: 'var(--r-md)',
       padding: '10px 14px',
@@ -138,8 +138,8 @@ export default function OverviewPage() {
       <div className="stat-grid">
         <StatCard icon={MousePointerClick} value="12,480" label="Total Clicks" delta="+12%" up variant="green" />
         <StatCard icon={Users} value="847" label="Unique Visitors" delta="+8%" up variant="dark" />
-        <StatCard icon={CalendarDays} value="52" label="Attributed Bookings" delta="+15%" up variant="blue" />
-        <StatCard icon={Wallet} value="GHS 4,200" label="Total Earned" delta="+22%" up variant="purple" />
+        <StatCard icon={CalendarDays} value="52" label="Attributed Bookings" delta="+15%" up variant="mint" />
+        <StatCard icon={Wallet} value="GHS 4,200" label="Total Earned" delta="+22%" up variant="orange" />
       </div>
 
       {/* ── Charts row ── */}
@@ -165,20 +165,20 @@ export default function OverviewPage() {
             <AreaChart data={earningsData}>
               <defs>
                 <linearGradient id="earnedGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#087747" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#087747" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="clicksGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#3463e8" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#3463e8" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(21,32,29,.06)" />
               <XAxis dataKey="month" stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="earned" stroke="#10b981" strokeWidth={2} fill="url(#earnedGrad)" name="Earned" />
-              <Area type="monotone" dataKey="clicks" stroke="#22d3ee" strokeWidth={2} fill="url(#clicksGrad)" name="Clicks" />
+              <Area type="monotone" dataKey="earned" stroke="#087747" strokeWidth={2} fill="url(#earnedGrad)" name="Earned" />
+              <Area type="monotone" dataKey="clicks" stroke="#3463e8" strokeWidth={2} fill="url(#clicksGrad)" name="Clicks" />
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>
@@ -200,10 +200,10 @@ export default function OverviewPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: '50%',
-                      background: i === 0 ? 'var(--grad-green)' : 'rgba(255,255,255,.06)',
+                      background: i === 0 ? 'var(--grad-green)' : 'var(--bg-paper)',
                       display: 'grid', placeItems: 'center',
                       fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 11,
-                      color: i === 0 ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                      color: i === 0 ? '#fff' : 'var(--text-secondary)',
                     }}>{i + 1}</div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{link.name}</div>
@@ -287,7 +287,7 @@ export default function OverviewPage() {
 
       {/* ── Conversion + Quick actions ── */}
       <div className="grid-2-equal">
-        <motion.div variants={item} className="card" style={{ background: 'var(--grad-card)', borderColor: 'rgba(16,185,129,.15)' }}>
+        <motion.div variants={item} className="card" style={{ background: 'var(--grad-card)', borderColor: '#cae3d3' }}>
           <div className="section-header">
             <div className="section-title">Conversion Rate</div>
             <span className="pill pill-success"><TrendingUp size={12} /> +1.1%</span>
@@ -295,7 +295,7 @@ export default function OverviewPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 32, padding: '20px 0' }}>
             <div style={{
               width: 120, height: 120, borderRadius: '50%',
-              border: '10px solid rgba(16,185,129,.15)',
+              border: '10px solid var(--green-bg)',
               borderTopColor: 'var(--green)',
               borderRightColor: 'var(--green)',
               display: 'grid', placeItems: 'center',

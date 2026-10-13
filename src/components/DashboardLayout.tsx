@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -13,8 +13,9 @@ import {
   Search,
   Settings,
   LogOut,
-  ChevronDown,
   BarChart3,
+  BadgeCheck,
+  Star,
 } from 'lucide-react'
 
 const NAV_SECTIONS = [
@@ -43,7 +44,7 @@ const NAV_SECTIONS = [
   {
     label: 'Account',
     items: [
-      { label: 'Profile', path: '/creator/profile', icon: User },
+      { label: 'Settings', path: '/creator/profile', icon: Settings },
     ],
   },
 ]
@@ -56,11 +57,12 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/creator/earnings': 'Earnings',
   '/creator/reports': 'Reports',
   '/creator/payouts': 'Payouts',
-  '/creator/profile': 'Profile',
+  '/creator/profile': 'Settings',
 }
 
 export default function DashboardLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
 
   return (
@@ -72,6 +74,33 @@ export default function DashboardLayout() {
           <div className="sidebar-brand">
             <span className="sidebar-brand-name">Travio Ghana</span>
             <span className="sidebar-brand-badge">Creator Studio</span>
+          </div>
+        </div>
+
+        {/* ── Profile card at top (like supplier dashboard) ── */}
+        <div
+          className="sidebar-profile-card"
+          onClick={() => navigate('/creator/profile')}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="sidebar-profile-avatar">
+            <img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"
+              alt="Ama Mensah"
+              className="sidebar-profile-img"
+            />
+            <div className="sidebar-profile-badge">
+              <BadgeCheck size={12} />
+            </div>
+          </div>
+          <div className="sidebar-profile-info">
+            <div className="sidebar-profile-name">Ama Mensah</div>
+            <div className="sidebar-profile-role">
+              <Star size={10} fill="var(--orange)" color="var(--orange)" />
+              Gold Tier Creator
+            </div>
+            <div className="sidebar-profile-since">Member since 2026</div>
           </div>
         </div>
 
@@ -97,19 +126,14 @@ export default function DashboardLayout() {
         </nav>
 
         <div className="sidebar-footer">
-          <div
-            className="sidebar-user"
-            onClick={() => setProfileOpen(!profileOpen)}
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="sidebar-item sidebar-logout"
+            onClick={() => {}}
           >
-            <div className="sidebar-avatar">AM</div>
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">Ama Mensah</div>
-              <div className="sidebar-user-role">Gold Tier Creator</div>
-            </div>
-            <ChevronDown size={14} color="var(--text-tertiary)" />
-          </div>
+            <LogOut size={20} />
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
 
@@ -133,7 +157,7 @@ export default function DashboardLayout() {
               <Bell size={18} />
               <span className="topbar-bell-dot" />
             </button>
-            <button type="button" className="topbar-icon-btn" aria-label="Settings">
+            <button type="button" className="topbar-icon-btn" aria-label="Settings" onClick={() => navigate('/creator/profile')}>
               <Settings size={18} />
             </button>
           </div>
@@ -167,7 +191,7 @@ export default function DashboardLayout() {
               bottom: 80,
               left: 16,
               width: 240,
-              background: '#fff',
+              background: 'var(--bg-elevated)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--r-lg)',
               boxShadow: 'var(--shadow-lg)',
@@ -176,7 +200,7 @@ export default function DashboardLayout() {
             }}
           >
             <NavLink to="/creator/profile" className="sidebar-item" onClick={() => setProfileOpen(false)}>
-              <User size={16} /> Profile Settings
+              <User size={16} /> Settings
             </NavLink>
             <div className="divider" style={{ margin: '4px 0' }} />
             <button type="button" className="sidebar-item" style={{ width: '100%', color: 'var(--red)' }}>

@@ -30,14 +30,14 @@ const NAV_SECTIONS = [
     items: [
       { label: 'Links', path: '/creator/links', icon: Link2 },
       { label: 'Bookings', path: '/creator/bookings', icon: CalendarDays },
-      { label: 'Earnings', path: '/creator/earnings', icon: TrendingUp },
     ],
   },
   {
     label: 'Finance',
     items: [
+      { label: 'Earnings', path: '/creator/earnings', icon: TrendingUp },
+      { label: 'Reports', path: '/creator/reports', icon: BarChart3 },
       { label: 'Payouts', path: '/creator/payouts', icon: Wallet },
-      { label: 'Reports', path: '/creator/earnings', icon: BarChart3 },
     ],
   },
   {
@@ -54,6 +54,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/creator/links': 'Links',
   '/creator/bookings': 'Bookings',
   '/creator/earnings': 'Earnings',
+  '/creator/reports': 'Reports',
   '/creator/payouts': 'Payouts',
   '/creator/profile': 'Profile',
 }

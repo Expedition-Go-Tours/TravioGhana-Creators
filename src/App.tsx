@@ -5,6 +5,7 @@ import DiscoverPage from './pages/DiscoverPage'
 import LinksPage from './pages/LinksPage'
 import BookingsPage from './pages/BookingsPage'
 import EarningsPage from './pages/EarningsPage'
+import ReportsPage from './pages/ReportsPage'
 import PayoutsPage from './pages/PayoutsPage'
 import ProfilePage from './pages/ProfilePage'
 
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="links" element={<LinksPage />} />
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="earnings" element={<EarningsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="payouts" element={<PayoutsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/creator" replace />} />

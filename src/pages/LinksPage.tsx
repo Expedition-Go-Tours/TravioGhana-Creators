@@ -4,7 +4,6 @@ import {
   Copy,
   QrCode,
   BarChart3,
-  Ban,
   Plus,
   Link2,
   CheckCircle2,
@@ -21,6 +20,7 @@ const LINKS = [
   {
     id: '1',
     tour: 'Kakum Canopy Walkway',
+    region: 'Central Region',
     image: 'https://images.unsplash.com/photo-1580651315530-69c8e0026377?w=400&q=80',
     url: 'travioghana.com/tours/kakum?ref=TRV-AMA-8X4K',
     clicks: 312,
@@ -37,6 +37,7 @@ const LINKS = [
   {
     id: '2',
     tour: 'Mole National Park Safari',
+    region: 'Savannah Region',
     image: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=400&q=80',
     url: 'travioghana.com/tours/mole?ref=TRV-AMA-8X4K',
     clicks: 248,
@@ -53,6 +54,7 @@ const LINKS = [
   {
     id: '3',
     tour: 'Cape Coast & Elmina Castles',
+    region: 'Central Region',
     image: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=400&q=80',
     url: 'travioghana.com/tours/cape-coast?ref=TRV-AMA-8X4K',
     clicks: 198,
@@ -69,6 +71,7 @@ const LINKS = [
   {
     id: '4',
     tour: 'Boti Falls & Aburi Gardens',
+    region: 'Eastern Region',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80',
     url: 'travioghana.com/tours/boti?ref=TRV-AMA-8X4K',
     clicks: 87,
@@ -90,7 +93,7 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.3, 0.8, 0.4, 1] as const } },
 }
 
-function MiniSparkline({ data, color, width = 120, height = 36 }: {
+function MiniSparkline({ data, color, width = 120, height = 32 }: {
   data: number[]
   color: string
   width?: number
@@ -104,26 +107,25 @@ function MiniSparkline({ data, color, width = 120, height = 36 }: {
     const y = height - ((v - min) / range) * (height - 4) - 2
     return `${x},${y}`
   }).join(' ')
-
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
       <defs>
         <linearGradient id={`spark-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
           <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
       </defs>
       <polyline points={`0,${height} ${points} ${width},${height}`} fill={`url(#spark-${color.replace('#', '')})`} stroke="none" />
-      <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={points} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
-function LinkCard({ link, onCopy }: { link: typeof LINKS[0]; onCopy: (url: string) => void }) {
+function LinkCard({ link }: { link: typeof LINKS[0] }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
-    onCopy(link.url)
+    navigator.clipboard?.writeText(link.url).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -131,128 +133,225 @@ function LinkCard({ link, onCopy }: { link: typeof LINKS[0]; onCopy: (url: strin
   return (
     <motion.div
       variants={item}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -2 }}
       style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--r-2xl)',
+        borderRadius: 'var(--r-xl)',
         overflow: 'hidden',
-        transition: 'box-shadow 0.3s',
+        transition: 'box-shadow 0.25s var(--ease)',
       }}
     >
-      {/* Top strip with tour image */}
-      <div style={{ position: 'relative', height: 120, overflow: 'hidden' }}>
-        <img src={link.image} alt={link.tour} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,.6))' }} />
-        <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      {/* ── Main content: thumbnail left, info right ── */}
+      <div style={{ display: 'flex', gap: 16, padding: '20px 20px 16px' }}>
+        {/* Square tour thumbnail */}
+        <div style={{
+          width: 88,
+          height: 88,
+          borderRadius: 'var(--r-lg)',
+          overflow: 'hidden',
+          flexShrink: 0,
+          border: '1px solid var(--border-soft)',
+        }}>
+          <img
+            src={link.image}
+            alt={link.tour}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            loading="lazy"
+          />
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,.3)' }}>
-              {link.tour}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <h3 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 15,
+                fontWeight: 700,
+                letterSpacing: '-.02em',
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {link.tour}
+              </h3>
+              {link.trending && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  padding: '2px 7px',
+                  borderRadius: 'var(--r-pill)',
+                  background: 'var(--orange-bg)',
+                  color: 'var(--orange)',
+                  fontSize: 9,
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-display)',
+                  flexShrink: 0,
+                }}>
+                  <Flame size={9} /> HOT
+                </span>
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>
+              {link.region}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{
                 padding: '2px 8px',
                 borderRadius: 'var(--r-pill)',
-                background: link.campaignColor,
-                color: '#fff',
+                background: link.campaignColor + '18',
+                color: link.campaignColor,
                 fontSize: 10,
                 fontWeight: 800,
                 fontFamily: 'var(--font-display)',
               }}>
                 {link.campaign}
               </span>
-              {link.trending && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  padding: '2px 8px',
-                  borderRadius: 'var(--r-pill)',
-                  background: 'rgba(225,110,63,.9)',
-                  color: '#fff',
-                  fontSize: 10,
-                  fontWeight: 800,
-                }}>
-                  <Flame size={10} /> Trending
-                </span>
-              )}
+              <span className={`pill ${link.active ? 'pill-success' : 'pill-neutral'}`} style={{ fontSize: 9 }}>
+                {link.active ? 'Active' : 'Disabled'}
+              </span>
             </div>
           </div>
-          <span className={`pill ${link.active ? 'pill-success' : 'pill-neutral'}`} style={{ background: link.active ? 'rgba(16,185,129,.9)' : 'rgba(255,255,255,.2)', color: '#fff' }}>
-            {link.active ? 'Active' : 'Disabled'}
-          </span>
+
+          {/* Sparkline */}
+          <div style={{ marginTop: 10 }}>
+            <MiniSparkline data={link.sparkline} color={link.campaignColor} width={180} height={28} />
+          </div>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0, borderBottom: '1px solid var(--border-soft)' }}>
+      {/* ── Stats row ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0,
+        padding: '0 20px 16px',
+      }}>
         {[
-          { icon: MousePointerClick, label: 'Clicks', value: link.clicks, color: 'var(--text-primary)' },
-          { icon: CalendarDays, label: 'Bookings', value: link.bookings, color: 'var(--green)' },
-          { icon: Wallet, label: 'Earned', value: link.earned, color: 'var(--green)' },
-          { icon: TrendingUp, label: 'Conv.', value: `${link.conversion}%`, color: 'var(--text-primary)' },
-        ].map((s) => (
-          <div key={s.label} style={{ padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--border-soft)' }}>
-            <s.icon size={14} color="var(--text-tertiary)" style={{ margin: '0 auto 4px' }} />
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: s.color, letterSpacing: '-.02em' }}>
-              {s.value}
+          { icon: MousePointerClick, label: 'Clicks', value: link.clicks.toLocaleString() },
+          { icon: CalendarDays, label: 'Bookings', value: link.bookings.toString() },
+          { icon: Wallet, label: 'Earned', value: link.earned },
+          { icon: TrendingUp, label: 'Conv.', value: `${link.conversion}%` },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 3,
+            padding: '10px 0',
+            borderRight: i < 3 ? '1px solid var(--border-soft)' : 'none',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <s.icon size={12} color="var(--text-tertiary)" />
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 14,
+                color: s.label === 'Earned' ? 'var(--green)' : 'var(--text-primary)',
+                letterSpacing: '-.02em',
+              }}>
+                {s.value}
+              </span>
             </div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 2 }}>
+            <span style={{
+              fontSize: 9,
+              fontWeight: 700,
+              color: 'var(--text-tertiary)',
+              textTransform: 'uppercase',
+              letterSpacing: '.08em',
+            }}>
               {s.label}
-            </div>
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Sparkline + URL */}
-      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {link.url}
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <MiniSparkline data={link.sparkline} color={link.campaignColor} width={200} height={32} />
-          </div>
+      {/* ── URL + Actions ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 20px',
+        borderTop: '1px solid var(--border-soft)',
+        background: 'var(--bg-hover)',
+      }}>
+        <Link2 size={13} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
+        <div style={{
+          flex: 1,
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 11,
+          color: 'var(--text-tertiary)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {link.url}
         </div>
-      </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 6, padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-hover)' }}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.92 }}
           type="button"
           onClick={handleCopy}
-          className="btn btn-sm"
           style={{
-            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '6px 12px',
+            borderRadius: 'var(--r-sm)',
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: 'var(--font-display)',
             background: copied ? 'var(--green-bg)' : 'var(--green)',
             color: copied ? 'var(--green-dark)' : '#fff',
+            border: 'none',
+            cursor: 'pointer',
             transition: 'all 0.2s',
+            whiteSpace: 'nowrap',
           }}
         >
           <AnimatePresence mode="wait">
             {copied ? (
-              <motion.span key="copied" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 size={14} /> Copied!
+              <motion.span key="c" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircle2 size={12} /> Copied
               </motion.span>
             ) : (
-              <motion.span key="copy" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Copy size={14} /> Copy Link
+              <motion.span key="d" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Copy size={12} /> Copy
               </motion.span>
             )}
           </AnimatePresence>
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} title="QR Code">
-          <QrCode size={15} />
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} title="Share">
-          <Share2 size={15} />
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} title="Analytics">
-          <BarChart3 size={15} />
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '6px 10px', color: link.active ? 'var(--red)' : 'var(--green)' }} title={link.active ? 'Disable' : 'Enable'}>
-          <Ban size={15} />
-        </button>
+        </motion.button>
+
+        {[
+          { icon: QrCode, label: 'QR' },
+          { icon: Share2, label: 'Share' },
+          { icon: BarChart3, label: 'Stats' },
+        ].map((a) => (
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            key={a.label}
+            type="button"
+            title={a.label}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 'var(--r-sm)',
+              display: 'grid',
+              placeItems: 'center',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              flexShrink: 0,
+            }}
+          >
+            <a.icon size={13} />
+          </motion.button>
+        ))}
       </div>
     </motion.div>
   )
@@ -280,42 +379,40 @@ export default function LinksPage() {
         </button>
       </motion.div>
 
-      {/* ── Referral code hero banner ── */}
+      {/* ── Referral code hero ── */}
       <motion.div
         variants={item}
         style={{
           position: 'relative',
-          borderRadius: 'var(--r-3xl)',
+          borderRadius: 'var(--r-2xl)',
           overflow: 'hidden',
           marginBottom: 24,
           background: 'linear-gradient(135deg, #075634 0%, #087747 50%, #1b674c 100%)',
-          padding: '36px 40px',
+          padding: '32px 36px',
           color: '#fff',
         }}
       >
-        {/* Decorative circles */}
-        <div style={{ position: 'absolute', right: -40, top: -40, width: 200, height: 200, borderRadius: '50%', border: '1px solid rgba(255,255,255,.1)' }} />
-        <div style={{ position: 'absolute', right: 60, bottom: -60, width: 160, height: 160, borderRadius: '50%', border: '1px solid rgba(255,255,255,.08)' }} />
+        <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', border: '1px solid rgba(255,255,255,.1)' }} />
+        <div style={{ position: 'absolute', right: 50, bottom: -50, width: 120, height: 120, borderRadius: '50%', border: '1px solid rgba(255,255,255,.08)' }} />
 
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Sparkles size={16} color="var(--lime)" />
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.12em', opacity: .7 }}>
+              <Sparkles size={14} color="var(--lime)" />
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.12em', opacity: .7 }}>
                 Your Referral Code
               </span>
             </div>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 36, fontWeight: 800, letterSpacing: '.12em', lineHeight: 1 }}>
+            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 32, fontWeight: 800, letterSpacing: '.12em', lineHeight: 1 }}>
               TRV-AMA-8X4K
             </div>
-            <div style={{ fontSize: 13, opacity: .7, marginTop: 10 }}>
-              Share this code or any link below. Earn 15% on every confirmed booking.
+            <div style={{ fontSize: 13, opacity: .7, marginTop: 8 }}>
+              Earn 15% commission on every confirmed booking through your links.
             </div>
           </div>
-
           <div style={{ display: 'flex', gap: 10 }}>
             <motion.button
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               type="button"
               onClick={handleCopyCode}
@@ -323,46 +420,46 @@ export default function LinksPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '14px 24px',
+                padding: '12px 22px',
                 borderRadius: 'var(--r-pill)',
                 background: copiedCode ? 'rgba(216,246,118,.2)' : '#fff',
-                color: copiedCode ? 'var(--lime)' : 'var(--ink, #15201d)',
+                color: copiedCode ? 'var(--lime)' : '#15201d',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: 14,
+                fontSize: 13,
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
             >
-              {copiedCode ? <><CheckCircle2 size={16} /> Copied!</> : <><Copy size={16} /> Copy Code</>}
+              {copiedCode ? <><CheckCircle2 size={15} /> Copied!</> : <><Copy size={15} /> Copy Code</>}
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               type="button"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '14px 24px',
+                padding: '12px 22px',
                 borderRadius: 'var(--r-pill)',
                 background: 'rgba(255,255,255,.12)',
                 color: '#fff',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: 14,
+                fontSize: 13,
                 border: '1px solid rgba(255,255,255,.2)',
                 cursor: 'pointer',
               }}
             >
-              <QrCode size={16} /> QR Code
+              <QrCode size={15} /> QR Code
             </motion.button>
           </div>
         </div>
 
-        {/* Mini stats strip */}
-        <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 32, marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,.12)' }}>
+        {/* Stats strip */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 28, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,.12)' }}>
           {[
             { label: 'Total Clicks', value: '845', icon: MousePointerClick },
             { label: 'Bookings', value: '43', icon: CalendarDays },
@@ -370,22 +467,22 @@ export default function LinksPage() {
             { label: 'Avg Conv.', value: '5.1%', icon: TrendingUp },
           ].map((s) => (
             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,255,255,.12)', display: 'grid', placeItems: 'center' }}>
-                <s.icon size={16} />
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,.12)', display: 'grid', placeItems: 'center' }}>
+                <s.icon size={14} />
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18 }}>{s.value}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, opacity: .6, textTransform: 'uppercase', letterSpacing: '.08em' }}>{s.label}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }}>{s.value}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, opacity: .6, textTransform: 'uppercase', letterSpacing: '.08em' }}>{s.label}</div>
               </div>
             </div>
           ))}
         </div>
       </motion.div>
 
-      {/* ── Link cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 16 }}>
+      {/* ── Link cards (horizontal layout) ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {LINKS.map((link) => (
-          <LinkCard key={link.id} link={link} onCopy={() => {}} />
+          <LinkCard key={link.id} link={link} />
         ))}
       </div>
 

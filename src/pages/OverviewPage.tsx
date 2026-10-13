@@ -10,9 +10,7 @@ import {
   Compass,
   FileText,
   Star,
-  MapPin,
   Flame,
-  Eye,
   ArrowUp,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -180,56 +178,104 @@ export default function OverviewPage() {
         <StatCard icon={Star} value="4.8" label="Avg Rating" delta="+0.2" up variant="orange" />
       </div>
 
-      {/* ── Top Tours (with images) ── */}
-      <motion.div variants={item}>
+      {/* ── Top Tours Leaderboard ── */}
+      <motion.div variants={item} style={{ marginBottom: 24 }}>
         <div className="section-header">
           <div>
-            <div className="section-title">Your Top Performing Tours</div>
+            <div className="section-title">Top Performing Tours</div>
             <div className="section-sub">Ranked by bookings generated</div>
           </div>
           <Link to="/creator/discover" className="btn btn-ghost btn-sm">
-            Discover more <ArrowRight size={14} />
+            View all <ArrowRight size={14} />
           </Link>
         </div>
-        <div className="tour-grid">
-          {topTours.map((tour) => (
-            <div key={tour.id} className="tour-card">
-              <div className="tour-card-badge">
-                {tour.mostBooked && (
-                  <span className="pill pill-success" style={{ background: 'rgba(8,119,71,.9)', color: '#fff' }}>
-                    <Flame size={10} /> Most Booked
-                  </span>
-                )}
-                {tour.trending && !tour.mostBooked && (
-                  <span className="pill pill-warning" style={{ background: 'rgba(225,110,63,.9)', color: '#fff' }}>
-                    <ArrowUp size={10} /> Trending
-                  </span>
-                )}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {topTours.map((tour, i) => (
+            <div
+              key={tour.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 20px',
+                borderBottom: i < topTours.length - 1 ? '1px solid var(--border-soft)' : 'none',
+                transition: 'background 0.15s',
+              }}
+            >
+              {/* Rank */}
+              <div style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: i === 0 ? 'var(--green)' : i === 1 ? 'var(--green-bg)' : 'var(--bg-paper)',
+                color: i === 0 ? '#fff' : i === 1 ? 'var(--green)' : 'var(--text-tertiary)',
+                display: 'grid',
+                placeItems: 'center',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 12,
+                flexShrink: 0,
+              }}>
+                {i + 1}
               </div>
-              <img className="tour-card-img" src={tour.image} alt={tour.title} loading="lazy" />
-              <div className="tour-card-body">
-                <div className="tour-card-region">
-                  <MapPin size={12} /> {tour.region}
+
+              {/* Thumbnail */}
+              <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border-soft)' }}>
+                <img src={tour.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+              </div>
+
+              {/* Tour info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {tour.title}
+                  </span>
+                  {tour.mostBooked && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 7px', borderRadius: 'var(--r-pill)', background: 'var(--green-bg)', color: 'var(--green-dark)', fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-display)', flexShrink: 0 }}>
+                      <Flame size={9} /> Most Booked
+                    </span>
+                  )}
+                  {tour.trending && !tour.mostBooked && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 7px', borderRadius: 'var(--r-pill)', background: 'var(--orange-bg)', color: 'var(--orange)', fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-display)', flexShrink: 0 }}>
+                      <ArrowUp size={9} /> Trending
+                    </span>
+                  )}
                 </div>
-                <div className="tour-card-title">{tour.title}</div>
-                <div className="tour-card-stats">
-                  <div className="tour-card-stat">
-                    <Eye size={13} /> <strong>{tour.clicks}</strong> clicks
-                  </div>
-                  <div className="tour-card-stat">
-                    <CalendarDays size={13} /> <strong>{tour.bookings}</strong> bookings
-                  </div>
-                  <div className="tour-card-stat">
-                    <Star size={13} fill="var(--orange)" color="var(--orange)" /> <strong>{tour.rating}</strong>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 3, fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  <span>{tour.region}</span>
+                  <span>·</span>
+                  <span>★ {tour.rating}</span>
+                  <span>·</span>
+                  <span>{tour.clicks} clicks</span>
+                  <span>·</span>
+                  <span>{tour.bookings} bookings</span>
                 </div>
-                <div className="tour-card-footer">
-                  <div className="tour-card-commission">{tour.earned}</div>
-                  <button type="button" className="btn btn-primary btn-sm">
-                    <Link2 size={14} /> Get Link
-                  </button>
+                {/* Performance bar */}
+                <div style={{ marginTop: 6, height: 4, background: 'var(--bg-paper)', borderRadius: 2, overflow: 'hidden', maxWidth: 280 }}>
+                  <div style={{
+                    height: '100%',
+                    borderRadius: 2,
+                    background: i === 0 ? 'var(--green)' : 'var(--green-bg)',
+                    width: `${(tour.bookings / topTours[0].bookings) * 100}%`,
+                    transition: 'width 0.6s var(--ease)',
+                  }} />
                 </div>
               </div>
+
+              {/* Earned */}
+              <div style={{ textAlign: 'right', minWidth: 80, flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--green)', letterSpacing: '-.02em' }}>
+                  {tour.earned}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                  {tour.commission} comm.
+                </div>
+              </div>
+
+              {/* Action */}
+              <button type="button" className="btn btn-primary btn-sm" style={{ flexShrink: 0, padding: '6px 12px' }}>
+                <Link2 size={13} /> Get Link
+              </button>
             </div>
           ))}
         </div>

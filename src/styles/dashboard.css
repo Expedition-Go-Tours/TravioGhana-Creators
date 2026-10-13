@@ -1,0 +1,361 @@
+/* ============================================================
+   Dashboard Shell — Layout, Top Bar, Navigation
+   ============================================================ */
+
+.dash-shell {
+  min-height: 100vh;
+  background: var(--cream);
+}
+
+/* ── Top bar ── */
+.dash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, .85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-1);
+}
+
+.dash-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--container);
+  margin: 0 auto;
+  height: 64px;
+}
+
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-brand-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--green);
+}
+
+.dash-brand-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dash-brand-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--mint-light);
+  color: var(--green-cta-bg);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.dash-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+}
+
+.dash-icon-btn:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.dash-bell {
+  position: relative;
+}
+
+.dash-bell-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--orange);
+  border: 2px solid #fff;
+}
+
+.dash-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--radius-pill);
+  transition: background 0.2s;
+}
+
+.dash-avatar-btn:hover {
+  background: var(--paper);
+}
+
+.dash-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green-cta);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dash-avatar--lg {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+/* ── Navigation tabs ── */
+.dash-nav {
+  border-top: 1px solid var(--line-soft);
+}
+
+.dash-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: var(--container);
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 8px 0;
+}
+
+.dash-nav-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.dash-nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dash-nav-tab:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.dash-nav-tab--active {
+  background: var(--mint-light);
+  color: var(--green-cta-bg);
+}
+
+/* ── Main content ── */
+.dash-main {
+  width: var(--container);
+  margin: 0 auto;
+  padding: 32px 0 80px;
+}
+
+.dash-content {
+  min-height: 60vh;
+}
+
+/* ── Profile dropdown ── */
+.dash-profile-dropdown {
+  position: fixed;
+  top: 72px;
+  right: calc((100vw - var(--container)) / 2);
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-3);
+  padding: 8px;
+  z-index: 100;
+}
+
+.dash-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.dash-profile-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dash-profile-email {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dash-profile-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
+.dash-profile-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--ink);
+  transition: background 0.15s;
+}
+
+.dash-profile-item:hover {
+  background: var(--paper);
+}
+
+.dash-profile-logout {
+  color: var(--error);
+}
+
+/* ── Page header ── */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.page-header p {
+  color: var(--muted);
+  font-size: 16px;
+  max-width: 600px;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ── Section title ── */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+
+/* ── Metric grid ── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1023px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Two-column grid ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1023px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-2-equal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 767px) {
+  .grid-2-equal {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .dash-topbar-inner {
+    height: 56px;
+  }
+
+  .dash-brand-badge {
+    display: none;
+  }
+
+  .dash-main {
+    padding: 20px 0 60px;
+  }
+
+  .dash-profile-dropdown {
+    right: 16px;
+    width: calc(100vw - 32px);
+    max-width: 320px;
+  }
+
+  .page-header-row {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-content > div {
+    animation: none !important;
+  }
+}

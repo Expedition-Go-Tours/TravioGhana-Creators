@@ -212,6 +212,20 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
 .pill-neutral { background: var(--bg-paper); color: var(--text-secondary); }
 
 /* ── Inputs ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: .01em;
+}
+
 .input {
   width: 100%;
   padding: 12px 16px;

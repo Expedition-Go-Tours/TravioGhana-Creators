@@ -83,7 +83,7 @@
   --sidebar-border:  var(--border);
 
   /* ── Layout ── */
-  --topbar-h: 64px;
+  --topbar-h: 80px;
 
   /* ── Motion ── */
   --ease: cubic-bezier(0.3, 0.8, 0.4, 1);

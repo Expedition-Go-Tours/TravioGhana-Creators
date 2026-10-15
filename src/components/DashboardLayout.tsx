@@ -25,6 +25,7 @@ import {
 import { useStore } from '../store/store'
 import { selectNotifications } from '../store/selectors'
 import ConfirmDialog from './ui/ConfirmDialog'
+import logoSrc from '../assets/TravioGhana_Logo.svg'
 
 const NAV_SECTIONS = [
   {
@@ -54,17 +55,6 @@ const NAV_SECTIONS = [
     items: [{ label: 'Settings', path: '/creator/profile', icon: Settings }],
   },
 ]
-
-const BREADCRUMB_MAP: Record<string, string> = {
-  '/creator': 'Dashboard',
-  '/creator/discover': 'Discover',
-  '/creator/links': 'Links',
-  '/creator/bookings': 'Bookings',
-  '/creator/earnings': 'Earnings',
-  '/creator/reports': 'Reports',
-  '/creator/payouts': 'Payouts',
-  '/creator/profile': 'Settings',
-}
 
 const IS_DEV = import.meta.env.DEV
 
@@ -133,11 +123,6 @@ export default function DashboardLayout() {
       {/* ── Sidebar ── */}
       <aside className={`sidebar${navOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">TG</div>
-          <div className="sidebar-brand">
-            <span className="sidebar-brand-name">Travio Ghana</span>
-            <span className="sidebar-brand-badge">Creator Studio</span>
-          </div>
           <button
             type="button"
             className="sidebar-close"
@@ -212,11 +197,7 @@ export default function DashboardLayout() {
             >
               <Menu size={20} />
             </button>
-            <div className="topbar-breadcrumb">
-              <span>Creator Studio</span>
-              <span>/</span>
-              <strong>{BREADCRUMB_MAP[location.pathname] || 'Dashboard'}</strong>
-            </div>
+            <img src={logoSrc} alt="Travio Ghana" className="topbar-logo" />
           </div>
 
           <div className="topbar-right">

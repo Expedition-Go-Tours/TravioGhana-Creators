@@ -23,31 +23,16 @@
   overflow: hidden;
 }
 
+/* The brand block was removed from the sidebar — the Travio Ghana logo now
+   lives in the topbar (matching the supplier dashboard). What remains here is
+   a mobile-only row holding the drawer's close button, so the profile card can
+   move up and sit at the very top of the rail. */
 .sidebar-header {
-  display: flex;
+  display: none;
   align-items: center;
-  gap: 12px;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--border-soft);
+  justify-content: flex-end;
+  padding: 12px 12px 0;
 }
-
-.sidebar-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-sm);
-  background: var(--grad-green);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 14px;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.sidebar-brand { display: flex; flex-direction: column; overflow: hidden; }
-.sidebar-brand-name { font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: -.02em; color: var(--text-primary); white-space: nowrap; }
-.sidebar-brand-badge { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
 
 .sidebar-nav {
   flex: 1;
@@ -113,7 +98,7 @@
   align-items: center;
   gap: 10px;
   padding: 20px 16px;
-  margin: 12px 12px 0;
+  margin: 16px 12px 0;
   background: var(--bg-hover);
   border: 1px solid var(--border-soft);
   border-radius: var(--r-xl);
@@ -222,8 +207,7 @@
   padding: 0 20px;
 }
 .topbar-left { display: flex; align-items: center; gap: 16px; }
-.topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-tertiary); }
-.topbar-breadcrumb span { color: var(--text-primary); }
+.topbar-logo { width: 150px; height: auto; display: block; }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 
 .topbar-search {
@@ -831,12 +815,13 @@
   .tour-grid { grid-template-columns: 1fr; }
   .topbar-search { display: none; }
   .topbar-menu-btn { display: grid; }
+  .sidebar-header { display: flex; }
   .sidebar-close { display: grid; }
   .demo-badge { display: none; }
   .hero-banner-content { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
   .hero-banner-tour { width: 100%; }
   .section-header { flex-wrap: wrap; gap: 10px; }
-  .topbar-breadcrumb { font-size: 12px; }
+  .topbar-logo { width: 122px; }
   .kpi { min-height: 120px; padding: 18px 20px; }
 }
 @media (max-width: 480px) {

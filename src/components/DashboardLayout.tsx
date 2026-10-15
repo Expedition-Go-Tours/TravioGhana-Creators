@@ -70,6 +70,8 @@ export default function DashboardLayout() {
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [search, setSearch] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const bellRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // Scroll to top + close mobile nav on route change
   useEffect(() => {
@@ -91,6 +93,31 @@ export default function DashboardLayout() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Close the notification / account popovers when the user clicks outside
+  // them (or presses Escape), the way a menu is expected to behave. Clicks
+  // inside a popover keep it open so its own actions still run; the toggle
+  // buttons live inside their anchors, so their own click is "inside" too.
+  useEffect(() => {
+    if (!bellOpen && !menuOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node
+      if (bellOpen && !bellRef.current?.contains(target)) setBellOpen(false)
+      if (menuOpen && !menuRef.current?.contains(target)) setMenuOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setBellOpen(false)
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [bellOpen, menuOpen])
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -217,7 +244,7 @@ export default function DashboardLayout() {
               Demo data
             </span>
 
-            <div className="topbar-popover-anchor">
+            <div className="topbar-popover-anchor" ref={bellRef}>
               <button
                 type="button"
                 className="topbar-icon-btn"
@@ -278,7 +305,7 @@ export default function DashboardLayout() {
               </AnimatePresence>
             </div>
 
-            <div className="topbar-popover-anchor">
+            <div className="topbar-popover-anchor" ref={menuRef}>
               <button
                 type="button"
                 className="topbar-avatar"

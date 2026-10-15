@@ -1,17 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Copy, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { copyText } from '../../lib/clipboard'
 
 export default function CopyButton({ text, label = 'Copy', iconOnly = false }: { text: string; label?: string; iconOnly?: boolean }) {
   const [copied, setCopied] = useState(false)
+  const timer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
   const handle = async () => {
-    try {
-      await navigator.clipboard.writeText(text)
+    const ok = await copyText(text)
+    if (ok) {
       setCopied(true)
       toast.success('Copied')
-      setTimeout(() => setCopied(false), 2000)
-    } catch (e) {
+      window.clearTimeout(timer.current)
+      timer.current = window.setTimeout(() => setCopied(false), 2000)
+    } else {
       toast.error('Failed to copy')
     }
   }

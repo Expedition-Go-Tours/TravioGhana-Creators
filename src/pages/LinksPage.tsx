@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Copy,
@@ -14,12 +15,21 @@ import {
   Wallet,
   Flame,
   Sparkles,
+  PauseCircle,
+  PlayCircle,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStore } from '../store/store'
 import { selectLinksSummary, selectTotalBookings } from '../store/selectors'
 import { ghs, formatNumber } from '../lib/format'
+import { copyText } from '../lib/clipboard'
+import type { ReferralLink } from '../store/types'
 import StatusBadge from '../components/ui/StatusBadge'
 import TourImage from '../components/ui/TourImage'
+import GenerateLinkModal from '../components/links/GenerateLinkModal'
+import QrModal from '../components/links/QrModal'
+import ShareDrawer from '../components/links/ShareDrawer'
+import StatsDrawer from '../components/links/StatsDrawer'
 
 const stagger = { show: { transition: { staggerChildren: 0.08 } } }
 const item = {
@@ -42,7 +52,7 @@ function MiniSparkline({ data, color, width = 120, height = 32 }: {
     const y = height - ((v - min) / range) * (height - 4) - 2
     return `${x},${y}`
   }).join(' ')
-  const gid = `spark-${color.replace('#', '')}-${width}`
+  const gid = `spark-${color.replace('#', '')}-${width}-${data.length}`
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
       <defs>
@@ -63,6 +73,7 @@ interface DerivedLink {
   region: string
   image: string
   url: string
+  code: string
   clicks: number
   bookings: number
   earned: number
@@ -75,20 +86,29 @@ interface DerivedLink {
   conversion: number
 }
 
-function LinkCard({ link }: { link: DerivedLink }) {
+interface CardActions {
+  onQr: (link: DerivedLink) => void
+  onShare: (link: DerivedLink) => void
+  onStats: (link: DerivedLink) => void
+  onToggle: (link: DerivedLink) => void
+}
+
+function LinkCard({ link, onQr, onShare, onStats, onToggle }: { link: DerivedLink } & CardActions) {
   const [copied, setCopied] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(link.url).then(
-      () => {
+    copyText(link.url).then((ok) => {
+      if (ok) {
         setCopied(true)
+        toast.success('Link copied')
         window.clearTimeout(timer.current)
         timer.current = window.setTimeout(() => setCopied(false), 2000)
-      },
-      () => {}
-    )
+      } else {
+        toast.error('Could not copy link')
+      }
+    })
   }
 
   const isActive = link.status === 'active'
@@ -178,7 +198,7 @@ function LinkCard({ link }: { link: DerivedLink }) {
       }}>
         <Link2 size={13} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
         <div style={{
-          flex: 1, minWidth: 120, fontFamily: 'ui-monospace, monospace', fontSize: 11,
+          flex: 1, minWidth: 120, fontFamily: 'var(--font-mono)', fontSize: 11,
           color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {link.url}
@@ -209,21 +229,25 @@ function LinkCard({ link }: { link: DerivedLink }) {
         </motion.button>
 
         {[
-          { icon: QrCode, label: 'QR' },
-          { icon: Share2, label: 'Share' },
-          { icon: BarChart3, label: 'Stats' },
+          { icon: QrCode, label: 'QR', onClick: () => onQr(link) },
+          { icon: Share2, label: 'Share', onClick: () => onShare(link) },
+          { icon: BarChart3, label: 'Stats', onClick: () => onStats(link) },
+          { icon: isActive ? PauseCircle : PlayCircle, label: isActive ? 'Pause' : 'Activate', onClick: () => onToggle(link), disabled: link.status === 'expired' },
         ].map((a) => (
           <motion.button
             whileTap={{ scale: 0.92 }}
             key={a.label}
             type="button"
             title={a.label}
-            data-wired="pending"
-            disabled={!isActive && a.label === 'QR'}
+            aria-label={`${a.label} — ${link.tour}`}
+            onClick={a.onClick}
+            disabled={a.disabled}
             style={{
               width: 30, height: 30, borderRadius: 'var(--r-sm)', display: 'grid', placeItems: 'center',
-              background: 'var(--bg-surface)', border: '1px solid var(--border)', cursor: 'pointer',
-              color: 'var(--text-secondary)', flexShrink: 0,
+              background: 'var(--bg-surface)', border: '1px solid var(--border)',
+              cursor: a.disabled ? 'not-allowed' : 'pointer',
+              color: a.disabled ? 'var(--text-tertiary)' : 'var(--text-secondary)',
+              opacity: a.disabled ? 0.5 : 1, flexShrink: 0,
             }}
           >
             <a.icon size={13} />
@@ -239,9 +263,32 @@ const CAMPAIGN_COLORS = ['#087747', '#e16e3f', '#b45309', '#6b7280']
 const campaignColor = (i: number) => CAMPAIGN_COLORS[i % CAMPAIGN_COLORS.length]
 
 export default function LinksPage() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const summary = useMemo(() => selectLinksSummary(state), [state])
   const totalBookings = useMemo(() => selectTotalBookings(state), [state])
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [genOpen, setGenOpen] = useState(false)
+  const [genTourId, setGenTourId] = useState<string | undefined>(undefined)
+  const [qr, setQr] = useState<{ url: string; title: string; code: string } | null>(null)
+  const [share, setShare] = useState<DerivedLink | null>(null)
+  const [stats, setStats] = useState<string | null>(null)
+  const [copiedCode, setCopiedCode] = useState(false)
+  const codeTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(codeTimer.current), [])
+
+  // Consume ?tour=<id> handed over from the Discover page's "Get Link" buttons.
+  useEffect(() => {
+    const t = searchParams.get('tour')
+    if (!t) return
+    if (state.tours.some((tour) => tour.id === t)) {
+      setGenTourId(t)
+      setGenOpen(true)
+    }
+    const next = new URLSearchParams(searchParams)
+    next.delete('tour')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams, state.tours])
 
   const derived: DerivedLink[] = useMemo(
     () =>
@@ -256,6 +303,7 @@ export default function LinksPage() {
           region: tour?.region ?? '',
           image: tour?.image ?? '',
           url: l.url.replace(/^https?:\/\//, ''),
+          code: l.code,
           clicks: l.clicks,
           bookings,
           earned,
@@ -271,6 +319,33 @@ export default function LinksPage() {
     [state]
   )
 
+  const copyCode = () => {
+    copyText(state.profile.referralCode).then((ok) => {
+      if (ok) {
+        setCopiedCode(true)
+        toast.success('Referral code copied')
+        window.clearTimeout(codeTimer.current)
+        codeTimer.current = window.setTimeout(() => setCopiedCode(false), 2000)
+      } else {
+        toast.error('Could not copy code')
+      }
+    })
+  }
+
+  const handleToggle = (link: DerivedLink) => {
+    dispatch({ type: 'link/toggle', id: link.id })
+    toast.success(link.status === 'active' ? 'Link paused' : 'Link reactivated')
+  }
+
+  const heroReferralUrl = `https://travio.gh/r/${state.profile.referralCode}`
+
+  const cardActions: CardActions = {
+    onQr: (link) => setQr({ url: `https://${link.url}`, title: link.tour, code: link.code }),
+    onShare: (link) => setShare(link),
+    onStats: (link) => setStats(link.id),
+    onToggle: handleToggle,
+  }
+
   return (
     <motion.div variants={stagger} initial="hidden" animate="show">
       <motion.div variants={item} className="page-header">
@@ -278,7 +353,11 @@ export default function LinksPage() {
           <h1>Referral Links</h1>
           <p>Share your links, track performance, and earn on every booking.</p>
         </div>
-        <button type="button" className="btn btn-primary btn-lg" data-wired="pending">
+        <button
+          type="button"
+          className="btn btn-primary btn-lg"
+          onClick={() => { setGenTourId(undefined); setGenOpen(true) }}
+        >
           <Plus size={18} /> Generate New Link
         </button>
       </motion.div>
@@ -303,7 +382,7 @@ export default function LinksPage() {
                 Your Referral Code
               </span>
             </div>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 32, fontWeight: 800, letterSpacing: '.12em', lineHeight: 1, wordBreak: 'break-all' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 800, letterSpacing: '.12em', lineHeight: 1, wordBreak: 'break-all' }}>
               {state.profile.referralCode}
             </div>
             <div style={{ fontSize: 13, opacity: .7, marginTop: 8 }}>
@@ -315,20 +394,20 @@ export default function LinksPage() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               type="button"
-              data-wired="pending"
+              onClick={copyCode}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', borderRadius: 'var(--r-pill)',
-                background: '#fff', color: '#15201d', fontFamily: 'var(--font-display)', fontWeight: 800,
+                background: copiedCode ? 'var(--lime)' : '#fff', color: '#15201d', fontFamily: 'var(--font-display)', fontWeight: 800,
                 fontSize: 13, border: 'none', cursor: 'pointer',
               }}
             >
-              <Copy size={15} /> Copy Code
+              {copiedCode ? <CheckCircle2 size={15} /> : <Copy size={15} />} {copiedCode ? 'Copied' : 'Copy Code'}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               type="button"
-              data-wired="pending"
+              onClick={() => setQr({ url: heroReferralUrl, title: 'Your referral code', code: state.profile.referralCode })}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', borderRadius: 'var(--r-pill)',
                 background: 'rgba(255,255,255,.12)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 800,
@@ -362,7 +441,7 @@ export default function LinksPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {derived.map((link) => (
-          <LinkCard key={link.id} link={link} />
+          <LinkCard key={link.id} link={link} {...cardActions} />
         ))}
       </div>
 
@@ -371,11 +450,37 @@ export default function LinksPage() {
           <Link2 size={48} color="var(--text-tertiary)" style={{ margin: '0 auto 16px' }} />
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>No links yet</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>Generate your first referral link to start earning.</p>
-          <button type="button" className="btn btn-primary" data-wired="pending">
+          <button type="button" className="btn btn-primary" onClick={() => { setGenTourId(undefined); setGenOpen(true) }}>
             <Plus size={18} /> Generate Your First Link
           </button>
         </motion.div>
       )}
+
+      <GenerateLinkModal
+        open={genOpen}
+        onClose={() => setGenOpen(false)}
+        defaultTourId={genTourId}
+        onCreated={(link: ReferralLink) => {
+          const tourTitle = state.tours.find((t) => t.id === link.tourId)?.title ?? 'Your link'
+          setQr({ url: link.url, title: tourTitle, code: link.code })
+        }}
+      />
+      <QrModal
+        open={!!qr}
+        onClose={() => setQr(null)}
+        url={qr?.url ?? ''}
+        title={qr?.title ?? ''}
+        code={qr?.code ?? ''}
+      />
+      <ShareDrawer
+        open={!!share}
+        onClose={() => setShare(null)}
+        url={share ? `https://${share.url}` : ''}
+        code={share?.code ?? ''}
+        title={share?.tour ?? ''}
+        campaign={share?.campaign}
+      />
+      <StatsDrawer open={!!stats} onClose={() => setStats(null)} linkId={stats} />
     </motion.div>
   )
 }

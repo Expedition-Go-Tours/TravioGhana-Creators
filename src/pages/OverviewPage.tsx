@@ -173,7 +173,7 @@ export default function OverviewPage() {
             icon={<Banknote size={18} />}
             label="Available now"
             value={ghs(kpis.available.value)}
-            period="min withdrawal GHS 500"
+            period={`min withdrawal ${ghs(state.profile.payoutPrefs?.minPayout ?? 500)}`}
             tone="orange"
           />
         </motion.div>

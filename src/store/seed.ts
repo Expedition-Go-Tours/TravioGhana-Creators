@@ -267,7 +267,7 @@ const reportData: ReportData = {
   funnelData: [
     { stage: 'Impressions', value: 42000, pct: 100 },
     { stage: 'Reach', value: 28000, pct: 67 },
-    { stage: 'Clicks', value: 909, pct: 22 },
+    { stage: 'Clicks', value: 909, pct: 3.2 },
     { stage: 'Bookings', value: 31, pct: 3.4 }
   ],
   conversionRate: 3.4

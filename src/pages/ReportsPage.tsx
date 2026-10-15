@@ -254,7 +254,7 @@ export default function ReportsPage() {
                 <div style={{ height: 32, background: 'var(--bg-paper)', borderRadius: 'var(--r-sm)', overflow: 'hidden', position: 'relative' }}>
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.max(f.pct, 2)}%` }}
+                    animate={{ width: `${Math.max((f.value / r.funnelData[0].value) * 100, 2)}%` }}
                     transition={{ duration: 0.8, delay: i * 0.15, ease: [0.3, 0.8, 0.4, 1] }}
                     style={{
                       height: '100%',

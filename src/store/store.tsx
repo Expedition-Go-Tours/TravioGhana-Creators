@@ -17,6 +17,10 @@ function loadState(): StoreState {
           ...initialState,
           ...parsed,
           profile: { ...initialState.profile, ...parsed.profile },
+          // reportData is static reference content that no action mutates, so
+          // always take it from the seed — otherwise persisted copies would hide
+          // data fixes shipped in later builds.
+          reportData: initialState.reportData,
           notificationPrefs: {
             email: { ...initialState.notificationPrefs.email, ...parsed.notificationPrefs?.email },
             push: { ...initialState.notificationPrefs.push, ...parsed.notificationPrefs?.push },

@@ -39,10 +39,13 @@
   --orange-bg:   #fef3e2;
   --red:         #c75c3d;
   --red-bg:      #fef2f2;
-  --blue:        #3463e8;
-  --blue-bg:     #eef2fe;
   --amber:       #b45309;
   --amber-bg:    #fef3e2;
+
+  /* ── Chart series (restrained: green / terracotta / amber) ── */
+  --chart-1: #087747;
+  --chart-2: #e16e3f;
+  --chart-3: #b45309;
 
   /* ── Gradients ── */
   --grad-green:  linear-gradient(135deg, #087747 0%, #075634 100%);
@@ -56,13 +59,14 @@
   --font-body:    'DM Sans', sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 
-  /* ── Radii ── */
+  /* ── Radii — one card radius (14px); small controls 8px; pills fully round ── */
   --r-sm:  8px;
-  --r-md:  12px;
+  --r-md:  14px;
   --r-lg:  14px;
-  --r-xl:  18px;
-  --r-2xl: 22px;
-  --r-3xl: 24px;
+  --r-xl:  14px;
+  --r-2xl: 14px;
+  --r-3xl: 14px;
+  --r:     14px;
   --r-pill: 999px;
 
   /* ── Shadows (from content-creators page) ── */
@@ -208,7 +212,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
 .pill-success { background: var(--green-bg); color: var(--green-dark); }
 .pill-warning { background: var(--amber-bg); color: var(--amber); }
 .pill-error   { background: var(--red-bg); color: var(--red); }
-.pill-info    { background: var(--blue-bg); color: var(--blue); }
+.pill-info    { background: var(--orange-bg); color: #b45309; }
 .pill-neutral { background: var(--bg-paper); color: var(--text-secondary); }
 
 /* ── Inputs ── */

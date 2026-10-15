@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   LayoutDashboard,
   Compass,
@@ -13,10 +14,17 @@ import {
   Search,
   Settings,
   LogOut,
+  Menu,
+  X,
   BarChart3,
   BadgeCheck,
   Star,
+  RotateCcw,
+  CheckCheck,
 } from 'lucide-react'
+import { useStore } from '../store/store'
+import { selectNotifications } from '../store/selectors'
+import ConfirmDialog from './ui/ConfirmDialog'
 
 const NAV_SECTIONS = [
   {
@@ -43,9 +51,7 @@ const NAV_SECTIONS = [
   },
   {
     label: 'Account',
-    items: [
-      { label: 'Settings', path: '/creator/profile', icon: Settings },
-    ],
+    items: [{ label: 'Settings', path: '/creator/profile', icon: Settings }],
   },
 ]
 
@@ -60,50 +66,108 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/creator/profile': 'Settings',
 }
 
+const IS_DEV = import.meta.env.DEV
+
 export default function DashboardLayout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [profileOpen, setProfileOpen] = useState(false)
+  const { state, dispatch } = useStore()
+  const notifSummary = useMemo(() => selectNotifications(state), [state])
 
-  // Scroll to top on route change
+  const [navOpen, setNavOpen] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [signOutOpen, setSignOutOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  // Scroll to top + close mobile nav on route change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
+    setNavOpen(false)
+    setBellOpen(false)
+    setMenuOpen(false)
   }, [location.pathname])
+
+  // "/" focuses search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = search.trim()
+    navigate(q ? `/creator/discover?q=${encodeURIComponent(q)}` : '/creator/discover')
+  }
+
+  const handleSignOut = () => {
+    setSignOutOpen(false)
+    dispatch({ type: 'demo/reset' })
+    toast.success('Signed out — demo data reset')
+    navigate('/creator')
+  }
 
   return (
     <div className="shell">
+      {/* ── Mobile backdrop ── */}
+      <AnimatePresence>
+        {navOpen && (
+          <motion.div
+            className="sidebar-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setNavOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className={`sidebar${navOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">TG</div>
           <div className="sidebar-brand">
             <span className="sidebar-brand-name">Travio Ghana</span>
             <span className="sidebar-brand-badge">Creator Studio</span>
           </div>
+          <button
+            type="button"
+            className="sidebar-close"
+            aria-label="Close menu"
+            onClick={() => setNavOpen(false)}
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* ── Profile card at top (like supplier dashboard) ── */}
         <div
           className="sidebar-profile-card"
           onClick={() => navigate('/creator/profile')}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/creator/profile')}
         >
           <div className="sidebar-profile-avatar">
-            <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"
-              alt="Ama Mensah"
-              className="sidebar-profile-img"
-            />
-            <div className="sidebar-profile-badge">
-              <BadgeCheck size={12} />
-            </div>
+            <img src={state.profile.avatar} alt={state.profile.displayName} className="sidebar-profile-img" />
+            {state.profile.verified && (
+              <div className="sidebar-profile-badge">
+                <BadgeCheck size={12} />
+              </div>
+            )}
           </div>
           <div className="sidebar-profile-info">
-            <div className="sidebar-profile-name">Ama Mensah</div>
+            <div className="sidebar-profile-name">{state.profile.displayName}</div>
             <div className="sidebar-profile-role">
               <Star size={10} fill="var(--orange)" color="var(--orange)" />
-              Gold Tier Creator
+              {state.profile.tier} Tier Creator
             </div>
             <div className="sidebar-profile-since">Member since 2026</div>
           </div>
@@ -118,9 +182,7 @@ export default function DashboardLayout() {
                   key={item.label}
                   to={item.path}
                   end={item.end}
-                  className={({ isActive }) =>
-                    `sidebar-item${isActive ? ' sidebar-item--active' : ''}`
-                  }
+                  className={({ isActive }) => `sidebar-item${isActive ? ' sidebar-item--active' : ''}`}
                 >
                   <item.icon size={20} />
                   <span>{item.label}</span>
@@ -131,11 +193,7 @@ export default function DashboardLayout() {
         </nav>
 
         <div className="sidebar-footer">
-          <button
-            type="button"
-            className="sidebar-item sidebar-logout"
-            onClick={() => {}}
-          >
+          <button type="button" className="sidebar-item sidebar-logout" onClick={() => setSignOutOpen(true)}>
             <LogOut size={20} />
             <span>Sign out</span>
           </button>
@@ -146,25 +204,153 @@ export default function DashboardLayout() {
       <div className="main">
         <header className="topbar">
           <div className="topbar-left">
+            <button
+              type="button"
+              className="topbar-menu-btn"
+              aria-label="Open menu"
+              onClick={() => setNavOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
             <div className="topbar-breadcrumb">
-              <span style={{ color: 'var(--text-tertiary)' }}>Creator Studio</span>
-              <span style={{ color: 'var(--text-tertiary)' }}>/</span>
-              <span>{BREADCRUMB_MAP[location.pathname] || 'Dashboard'}</span>
+              <span>Creator Studio</span>
+              <span>/</span>
+              <strong>{BREADCRUMB_MAP[location.pathname] || 'Dashboard'}</strong>
             </div>
           </div>
 
           <div className="topbar-right">
-            <div className="topbar-search">
+            <form className="topbar-search" onSubmit={submitSearch} role="search">
               <Search size={16} />
-              <input type="search" placeholder="Search..." />
+              <input
+                ref={searchRef}
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tours…  ( / )"
+                aria-label="Search tours"
+              />
+            </form>
+
+            <span className="demo-badge" title="This prototype runs on local mock data">
+              Demo data
+            </span>
+
+            <div className="topbar-popover-anchor">
+              <button
+                type="button"
+                className="topbar-icon-btn"
+                aria-label={`Notifications${notifSummary.unread ? ` (${notifSummary.unread} unread)` : ''}`}
+                onClick={() => { setBellOpen((v) => !v); setMenuOpen(false) }}
+              >
+                <Bell size={18} />
+                {notifSummary.unread > 0 && <span className="topbar-bell-dot" />}
+              </button>
+
+              <AnimatePresence>
+                {bellOpen && (
+                  <motion.div
+                    className="popover popover--notif"
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <div className="popover-head">
+                      <span>Notifications</span>
+                      {notifSummary.unread > 0 && (
+                        <button
+                          type="button"
+                          className="popover-action"
+                          onClick={() => dispatch({ type: 'notifications/markAllRead' })}
+                        >
+                          <CheckCheck size={14} /> Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="popover-body">
+                      {notifSummary.items.length === 0 && (
+                        <div className="notif-empty">No notifications</div>
+                      )}
+                      {notifSummary.items.map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          className={`notif-item${n.read ? '' : ' notif-item--unread'}`}
+                          onClick={() => {
+                            dispatch({ type: 'notifications/markRead', id: n.id })
+                            setBellOpen(false)
+                            if (n.link) navigate(n.link)
+                          }}
+                        >
+                          <span className="notif-dot" />
+                          <span className="notif-content">
+                            <span className="notif-title">{n.title}</span>
+                            <span className="notif-msg">{n.message}</span>
+                            <span className="notif-time">{n.time}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <button type="button" className="topbar-icon-btn" aria-label="Notifications">
-              <Bell size={18} />
-              <span className="topbar-bell-dot" />
-            </button>
-            <button type="button" className="topbar-icon-btn" aria-label="Settings" onClick={() => navigate('/creator/profile')}>
-              <Settings size={18} />
-            </button>
+
+            <div className="topbar-popover-anchor">
+              <button
+                type="button"
+                className="topbar-avatar"
+                aria-label="Account menu"
+                onClick={() => { setMenuOpen((v) => !v); setBellOpen(false) }}
+              >
+                <img src={state.profile.avatar} alt={state.profile.displayName} />
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    className="popover popover--menu"
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <div className="popover-user">
+                      <img src={state.profile.avatar} alt="" />
+                      <div>
+                        <div className="popover-user-name">{state.profile.displayName}</div>
+                        <div className="popover-user-mail">{state.profile.email}</div>
+                      </div>
+                    </div>
+                    <button type="button" className="popover-row" onClick={() => { setMenuOpen(false); navigate('/creator/profile') }}>
+                      <User size={16} /> Account settings
+                    </button>
+                    {IS_DEV && (
+                      <button
+                        type="button"
+                        className="popover-row"
+                        onClick={() => {
+                          dispatch({ type: 'demo/reset' })
+                          setMenuOpen(false)
+                          toast.success('Demo data reset')
+                        }}
+                      >
+                        <RotateCcw size={16} /> Reset demo data
+                      </button>
+                    )}
+                    <div className="divider" style={{ margin: '4px 0' }} />
+                    <button
+                      type="button"
+                      className="popover-row popover-row--danger"
+                      onClick={() => { setMenuOpen(false); setSignOutOpen(true) }}
+                    >
+                      <LogOut size={16} /> Sign out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 
@@ -183,37 +369,14 @@ export default function DashboardLayout() {
         </main>
       </div>
 
-      {/* ── Profile dropdown ── */}
-      <AnimatePresence>
-        {profileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'fixed',
-              bottom: 80,
-              left: 16,
-              width: 240,
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--r-lg)',
-              boxShadow: 'var(--shadow-lg)',
-              padding: 6,
-              zIndex: 100,
-            }}
-          >
-            <NavLink to="/creator/profile" className="sidebar-item" onClick={() => setProfileOpen(false)}>
-              <User size={16} /> Settings
-            </NavLink>
-            <div className="divider" style={{ margin: '4px 0' }} />
-            <button type="button" className="sidebar-item" style={{ width: '100%', color: 'var(--red)' }}>
-              <LogOut size={16} /> Sign out
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmDialog
+        open={signOutOpen}
+        onClose={() => setSignOutOpen(false)}
+        title="Sign out of the demo?"
+        message="This prototype has no backend, so signing out simply clears your local demo changes and returns everything to the sample data."
+        confirmText="Sign out"
+        onConfirm={handleSignOut}
+      />
     </div>
   )
 }

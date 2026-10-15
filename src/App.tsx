@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage'
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/creator" replace />} />
       <Route path="/creator" element={<DashboardLayout />}>
         <Route index element={<OverviewPage />} />
         <Route path="discover" element={<DiscoverPage />} />
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/creator" replace />} />
       </Route>
+      <Route path="*" element={<Navigate to="/creator" replace />} />
     </Routes>
   )
 }

@@ -197,6 +197,7 @@ const profile: Profile = {
   verified: true,
   active: true,
   referralCode: 'TRV-AMA-8X4K',
+  payoutPrefs: { frequency: 'Monthly', minPayout: 500, currency: 'GHS' },
   contentPrefs: { primaryPlatform: 'Instagram', style: 'Reels & Stories', bestTime1: '09:00', bestTime2: '18:00' },
   twoFA: { authenticatorEnabled: false, smsEnabled: false },
   agreementAccepted: true,

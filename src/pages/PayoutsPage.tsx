@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Wallet,
@@ -23,9 +23,12 @@ import {
 } from 'recharts'
 import { useStore } from '../store/store'
 import { selectPayoutSummary, selectEarningsSummary, selectMonthlyEarned } from '../store/selectors'
-import { ghs, formatDate } from '../lib/format'
+import { ghs, formatDate, downloadCsv } from '../lib/format'
+import { toast } from 'sonner'
 import StatusBadge from '../components/ui/StatusBadge'
 import type { StatusVariant } from '../components/ui/StatusBadge'
+import RequestPayoutModal from '../components/payouts/RequestPayoutModal'
+import MethodPickerModal from '../components/payouts/MethodPickerModal'
 
 const stagger = { show: { transition: { staggerChildren: 0.08 } } }
 const item = {
@@ -48,7 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function PayoutsPage() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
 
   const summary = useMemo(() => selectPayoutSummary(state), [state])
   const earnings = useMemo(() => selectEarningsSummary(state), [state])
@@ -83,6 +86,56 @@ export default function PayoutsPage() {
 
   const canRequest = earnings.available >= summary.minPayout
 
+  const [requestOpen, setRequestOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const frequency = state.profile.payoutPrefs?.frequency ?? 'Monthly'
+
+  const exportPayouts = () => {
+    downloadCsv(
+      `travio-payout-statement-${new Date().toISOString().slice(0, 10)}.csv`,
+      history.map((p) => ({
+        Reference: p.ref,
+        Date: p.date,
+        Method: p.method,
+        Status: p.status,
+        Amount: p.amount,
+        Reason: p.reason ?? '',
+      })),
+      ['Reference', 'Date', 'Method', 'Status', 'Amount', 'Reason']
+    )
+    toast.success('Statement exported', { description: `${history.length} payout rows` })
+  }
+
+  const handleRequest = (amount: number) => {
+    const method = defaultMethod?.label ?? 'Bank transfer'
+    const ref = `PO-${Math.floor(1000 + Math.random() * 9000)}`
+    dispatch({
+      type: 'payout/request',
+      payout: {
+        id: `p-${Date.now().toString(36)}`,
+        ref,
+        date: new Date().toISOString().slice(0, 10),
+        amount,
+        status: 'processing',
+        method,
+      },
+    })
+    setRequestOpen(false)
+    toast.success('Payout requested', { description: `${ghs(amount)} → ${method} · ${ref}` })
+  }
+
+  const handleSelectMethod = (id: string) => {
+    dispatch({ type: 'payoutMethod/setDefault', id })
+    setPickerOpen(false)
+    toast.success('Default payout method updated')
+  }
+
+  const handleRetry = (id: string) => {
+    dispatch({ type: 'payout/setStatus', id, status: 'processing', reason: '' })
+    toast.success('Payout retried', { description: 'Funds are processing again.' })
+  }
+
   return (
     <motion.div variants={stagger} initial="hidden" animate="show">
       {/* ── Header ── */}
@@ -92,10 +145,10 @@ export default function PayoutsPage() {
           <p>Manage your earnings and track withdrawals.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-secondary" data-wired="pending">
+          <button type="button" className="btn btn-secondary" onClick={exportPayouts}>
             <Download size={16} /> Statement
           </button>
-          <button type="button" className="btn btn-primary btn-lg" data-wired="pending" disabled={!canRequest}>
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => setRequestOpen(true)} disabled={!canRequest}>
             <Plus size={18} /> Request Payout
           </button>
         </div>
@@ -129,14 +182,14 @@ export default function PayoutsPage() {
               {ghs(earnings.available)}
             </div>
             <div style={{ fontSize: 13, opacity: .7, marginTop: 10 }}>
-              Minimum payout: {ghs(summary.minPayout)} · Next scheduled: 1 Nov 2026
+              Minimum payout: {ghs(summary.minPayout)} · Next scheduled: 1 Nov 2026 · {frequency}
             </div>
           </div>
           <motion.button
             whileHover={{ scale: canRequest ? 1.03 : 1 }}
             whileTap={{ scale: canRequest ? 0.96 : 1 }}
             type="button"
-            data-wired="pending"
+            onClick={() => setRequestOpen(true)}
             disabled={!canRequest}
             style={{
               display: 'flex',
@@ -226,7 +279,7 @@ export default function PayoutsPage() {
               <div className="section-title">Payout Method</div>
               <div className="section-sub">Where your earnings go</div>
             </div>
-            <button type="button" className="btn btn-ghost btn-sm" data-wired="pending">Change</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPickerOpen(true)}>Change</button>
           </div>
 
           {defaultMethod && (
@@ -253,7 +306,7 @@ export default function PayoutsPage() {
             {[
               { label: 'Next payout date', value: '1 Nov 2026', icon: CalendarDays },
               { label: 'Minimum threshold', value: ghs(summary.minPayout), icon: Wallet },
-              { label: 'Payout frequency', value: 'Monthly', icon: Clock },
+              { label: 'Payout frequency', value: frequency, icon: Clock },
             ].map((row) => (
               <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border-soft)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -274,7 +327,7 @@ export default function PayoutsPage() {
             <div className="section-title">Payout History</div>
             <div className="section-sub">{history.length} withdrawal transactions</div>
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" data-wired="pending">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={exportPayouts}>
             <Download size={14} /> Export
           </button>
         </div>
@@ -311,7 +364,7 @@ export default function PayoutsPage() {
                   </td>
                   <td data-label="">
                     {p.status === 'failed' && (
-                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--green)' }} data-wired="pending">Retry</button>
+                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--green)' }} onClick={() => handleRetry(p.id)}>Retry</button>
                     )}
                   </td>
                 </tr>
@@ -320,6 +373,22 @@ export default function PayoutsPage() {
           </table>
         </div>
       </motion.div>
+
+      <RequestPayoutModal
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        available={earnings.available}
+        minPayout={summary.minPayout}
+        currency={state.profile.payoutPrefs?.currency ?? 'GHS'}
+        method={defaultMethod}
+        onConfirm={handleRequest}
+      />
+      <MethodPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        methods={state.payoutMethods}
+        onSelect={handleSelectMethod}
+      />
     </motion.div>
   )
 }

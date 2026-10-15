@@ -79,15 +79,16 @@ export default function EarningsPage() {
     [state]
   )
 
+  // Reversed commission is NOT earned income, so it must never appear as a
+  // pie segment — the four buckets below always sum to totalEarned.
   const breakdown = useMemo(
     () => [
       { name: 'Paid out', value: earnings.paid, color: 'var(--chart-1)' },
       { name: 'Available', value: earnings.available, color: 'var(--chart-2)' },
       { name: 'Processing', value: earnings.processing, color: 'var(--chart-3)' },
       { name: 'Pending', value: earnings.pending, color: '#6b7280' },
-      { name: 'Reversals', value: reversals, color: 'var(--red)' },
     ].filter((b) => b.value > 0),
-    [earnings, reversals]
+    [earnings]
   )
 
   const rangeLabel: Record<Range, string> = {
@@ -238,6 +239,11 @@ export default function EarningsPage() {
                   <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>{ghs(b.value)}</span>
                 </div>
               ))}
+              {reversals > 0 && (
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
+                  {ghs(reversals)} in reversals excluded — reversed commission was never earned.
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

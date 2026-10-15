@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   User,
   CreditCard,
@@ -23,10 +24,15 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '../store/store'
-import { ghs, formatDate } from '../lib/format'
+import { ghs, formatDate, downloadCsv } from '../lib/format'
 import { Field } from '../components/ui/Field'
+import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import StatusBadge from '../components/ui/StatusBadge'
 import type { StatusVariant } from '../components/ui/StatusBadge'
+import AvatarPickerModal from '../components/profile/AvatarPickerModal'
+import AddMethodModal from '../components/profile/AddMethodModal'
+import type { PayoutMethod } from '../store/types'
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -64,6 +70,12 @@ export default function ProfilePage() {
   const { profile, notificationPrefs: prefs } = state
   const [activeTab, setActiveTab] = useState('profile')
   const [showPassword, setShowPassword] = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
+  const [addMethodOpen, setAddMethodOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
+  const navigate = useNavigate()
 
   const [form, setForm] = useState({
     firstName: profile.firstName,
@@ -115,6 +127,60 @@ export default function ProfilePage() {
     toast.success('Profile updated')
   }
 
+  const exportData = () => {
+    const rows = [
+      { Field: 'Name', Value: form.displayName },
+      { Field: 'Email', Value: form.email },
+      { Field: 'Phone', Value: form.phone },
+      { Field: 'Country', Value: form.country },
+      { Field: 'Website', Value: form.website },
+      { Field: 'Niche', Value: form.niche },
+      { Field: 'Tier', Value: profile.tier },
+      { Field: 'Referral code', Value: profile.referralCode },
+      { Field: 'Payout frequency', Value: profile.payoutPrefs?.frequency ?? 'Monthly' },
+      { Field: 'Minimum payout', Value: String(profile.payoutPrefs?.minPayout ?? 500) },
+      { Field: 'Total links', Value: String(state.links.length) },
+      { Field: 'Total clicks', Value: String(state.links.reduce((s, l) => s + l.clicks, 0)) },
+      { Field: 'Total bookings', Value: String(state.bookings.length) },
+      { Field: 'Total earned', Value: String(state.bookings.reduce((s, b) => s + b.commission, 0)) },
+    ]
+    downloadCsv(`travio-account-data-${new Date().toISOString().slice(0, 10)}.csv`, rows, ['Field', 'Value'])
+    toast.success('Account data exported')
+  }
+
+  const updatePassword = () => {
+    if (!pw.current || !pw.next || !pw.confirm) {
+      toast.error('Fill in all three password fields')
+      return
+    }
+    if (pw.next.length < 8) {
+      toast.error('New password must be at least 8 characters')
+      return
+    }
+    if (pw.next !== pw.confirm) {
+      toast.error('New passwords do not match')
+      return
+    }
+    setPw({ current: '', next: '', confirm: '' })
+    toast.success('Password updated')
+  }
+
+  const setPayoutPref = <K extends keyof NonNullable<typeof profile.payoutPrefs>>(key: K, value: NonNullable<typeof profile.payoutPrefs>[K]) =>
+    dispatch({ type: 'profile/update', patch: { payoutPrefs: { ...(profile.payoutPrefs ?? { frequency: 'Monthly', minPayout: 500, currency: 'GHS' }), [key]: value } } })
+
+  const handleAddMethod = (method: PayoutMethod) => {
+    dispatch({ type: 'payoutMethod/add', method })
+    setAddMethodOpen(false)
+    toast.success('Payout method added', { description: method.label })
+  }
+
+  const handleDelete = () => {
+    setDeleteOpen(false)
+    dispatch({ type: 'demo/reset' })
+    toast.success('Account deleted', { description: 'Prototype: demo data was reset.' })
+    navigate('/creator')
+  }
+
   const emailPrefs = prefs.email
   const pushPrefs = prefs.push
   const setEmailPref = (key: keyof typeof emailPrefs, value: boolean) =>
@@ -145,8 +211,8 @@ export default function ProfilePage() {
             />
             <button
               type="button"
-              data-wired="pending"
-              title="Change photo (prototype: fixed demo avatar)"
+              onClick={() => setAvatarOpen(true)}
+              title="Change photo"
               style={{
                 position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%',
                 background: 'var(--green)', color: '#fff', display: 'grid', placeItems: 'center',
@@ -174,7 +240,7 @@ export default function ProfilePage() {
             <button type="button" className="btn btn-primary" onClick={saveProfile}>
               <Save size={16} /> Save Changes
             </button>
-            <button type="button" className="btn btn-secondary" data-wired="pending">
+            <button type="button" className="btn btn-secondary" onClick={exportData}>
               <Download size={16} /> Export Data
             </button>
           </div>
@@ -308,7 +374,7 @@ export default function ProfilePage() {
                 <div className="card card-flat" style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <h3 className="section-title" style={{ marginBottom: 0 }}>Payout Methods</h3>
-                    <button type="button" className="btn btn-primary btn-sm" data-wired="pending">
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => setAddMethodOpen(true)}>
                       <Plus size={14} /> Add Method
                     </button>
                   </div>
@@ -367,20 +433,27 @@ export default function ProfilePage() {
                   <h3 className="section-title">Payout Preferences</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
                     <Field label="Payout frequency">
-                      <select className="select" defaultValue="Monthly">
-                        <option>Weekly</option>
-                        <option>Bi-weekly</option>
-                        <option>Monthly</option>
+                      <select className="select" value={profile.payoutPrefs?.frequency ?? 'Monthly'} onChange={(e) => setPayoutPref('frequency', e.target.value as 'Weekly' | 'Bi-weekly' | 'Monthly')}>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Bi-weekly">Bi-weekly</option>
+                        <option value="Monthly">Monthly</option>
                       </select>
                     </Field>
-                    <Field label="Minimum payout threshold">
-                      <input className="input" defaultValue="GHS 500" />
+                    <Field label="Minimum payout threshold" hint="Payouts pause until your balance reaches this amount">
+                      <input
+                        className="input"
+                        type="number"
+                        min={0}
+                        step={50}
+                        value={profile.payoutPrefs?.minPayout ?? 500}
+                        onChange={(e) => setPayoutPref('minPayout', Math.max(0, Number(e.target.value) || 0))}
+                      />
                     </Field>
                     <Field label="Payout currency">
-                      <select className="select" defaultValue="GHS">
-                        <option>GHS — Ghanaian Cedi</option>
-                        <option>USD — US Dollar</option>
-                        <option>GBP — British Pound</option>
+                      <select className="select" value={profile.payoutPrefs?.currency ?? 'GHS'} onChange={(e) => setPayoutPref('currency', e.target.value)}>
+                        <option value="GHS">GHS — Ghanaian Cedi</option>
+                        <option value="USD">USD — US Dollar</option>
+                        <option value="GBP">GBP — British Pound</option>
                       </select>
                     </Field>
                   </div>
@@ -463,7 +536,7 @@ export default function ProfilePage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
                     <Field label="Current password">
                       <div style={{ position: 'relative' }}>
-                        <input className="input" type={showPassword ? 'text' : 'password'} placeholder="Enter current password" />
+                        <input className="input" type={showPassword ? 'text' : 'password'} value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} placeholder="Enter current password" />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -474,13 +547,13 @@ export default function ProfilePage() {
                         </button>
                       </div>
                     </Field>
-                    <Field label="New password">
-                      <input className="input" type="password" placeholder="Enter new password" />
+                    <Field label="New password" hint="At least 8 characters">
+                      <input className="input" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} placeholder="Enter new password" />
                     </Field>
                     <Field label="Confirm new password">
-                      <input className="input" type="password" placeholder="Confirm new password" />
+                      <input className="input" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} placeholder="Confirm new password" />
                     </Field>
-                    <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} data-wired="pending">
+                    <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} onClick={updatePassword}>
                       <Key size={16} /> Update Password
                     </button>
                   </div>
@@ -494,7 +567,15 @@ export default function ProfilePage() {
                         <div style={{ fontWeight: 600, fontSize: 13 }}>Authenticator App</div>
                         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Use an authenticator app for 2FA</div>
                       </div>
-                      <button type="button" className="btn btn-primary btn-sm" data-wired="pending" disabled={profile.twoFA.authenticatorEnabled}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={profile.twoFA.authenticatorEnabled}
+                        onClick={() => {
+                          dispatch({ type: 'profile/update', patch: { twoFA: { ...profile.twoFA, authenticatorEnabled: true } } })
+                          toast.success('Authenticator app enabled')
+                        }}
+                      >
                         {profile.twoFA.authenticatorEnabled ? 'Enabled' : 'Enable'}
                       </button>
                     </div>
@@ -503,7 +584,15 @@ export default function ProfilePage() {
                         <div style={{ fontWeight: 600, fontSize: 13 }}>SMS Verification</div>
                         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Receive codes via SMS</div>
                       </div>
-                      <button type="button" className="btn btn-secondary btn-sm" data-wired="pending" disabled={profile.twoFA.smsEnabled}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={profile.twoFA.smsEnabled}
+                        onClick={() => {
+                          dispatch({ type: 'profile/update', patch: { twoFA: { ...profile.twoFA, smsEnabled: true } } })
+                          toast.success('SMS verification enabled')
+                        }}
+                      >
                         {profile.twoFA.smsEnabled ? 'Enabled' : 'Enable'}
                       </button>
                     </div>
@@ -550,7 +639,7 @@ export default function ProfilePage() {
                         <div style={{ fontWeight: 600, fontSize: 13 }}>Export Account Data</div>
                         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Download all your data</div>
                       </div>
-                      <button type="button" className="btn btn-secondary btn-sm" data-wired="pending">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={exportData}>
                         <Download size={14} /> Export
                       </button>
                     </div>
@@ -559,7 +648,7 @@ export default function ProfilePage() {
                         <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--red)' }}>Delete Account</div>
                         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Permanently delete your account and all data</div>
                       </div>
-                      <button type="button" className="btn btn-danger btn-sm" data-wired="pending">
+                      <button type="button" className="btn btn-danger btn-sm" onClick={() => setDeleteOpen(true)}>
                         <Trash2 size={14} /> Delete
                       </button>
                     </div>
@@ -653,7 +742,7 @@ export default function ProfilePage() {
                         <div style={{ fontWeight: 600, fontSize: 13 }}>Privacy Notice</div>
                         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Last updated 1 Aug 2026</div>
                       </div>
-                      <button type="button" className="btn btn-ghost btn-sm" data-wired="pending">View</button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPrivacyOpen(true)}>View</button>
                     </div>
                   </div>
                 </div>
@@ -662,6 +751,40 @@ export default function ProfilePage() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      <AvatarPickerModal
+        open={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        current={profile.avatar}
+        onSave={(url) => {
+          dispatch({ type: 'profile/update', patch: { avatar: url } })
+          setAvatarOpen(false)
+          toast.success('Profile photo updated')
+        }}
+      />
+      <AddMethodModal
+        open={addMethodOpen}
+        onClose={() => setAddMethodOpen(false)}
+        isFirst={state.payoutMethods.length === 0}
+        onAdd={handleAddMethod}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        danger
+        title="Delete account?"
+        confirmText="Delete account"
+        message="This permanently deletes your account and all data. In this prototype it resets the demo dataset to its original state."
+      />
+      <Modal open={privacyOpen} onClose={() => setPrivacyOpen(false)} title="Privacy Notice" size="md"
+        footer={<button type="button" className="btn btn-primary btn-sm" onClick={() => setPrivacyOpen(false)}>Close</button>}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          <p><strong style={{ color: 'var(--text-primary)' }}>Effective 1 August 2026.</strong> This is a prototype demonstration of the Travio Ghana Creator Studio. All figures, bookings, payouts and personal details shown on this screen are mock demo data.</p>
+          <p>We collect the information you provide in your creator profile, referral links you generate, and the booking activity attributed to those links, in order to calculate commission and process payouts.</p>
+          <p>In a production release you would be able to request a copy of your data, correct inaccuracies, withdraw consent, and delete your account at any time. None of the data in this prototype leaves your browser.</p>
+        </div>
+      </Modal>
     </motion.div>
   )
 }

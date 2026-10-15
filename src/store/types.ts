@@ -169,6 +169,11 @@ export interface Profile {
   verified: boolean
   active: boolean
   referralCode: string
+  payoutPrefs: {
+    frequency: 'Weekly' | 'Bi-weekly' | 'Monthly'
+    minPayout: number
+    currency: string
+  }
   contentPrefs: {
     primaryPlatform: string
     style: string

@@ -11,7 +11,18 @@ function loadState(): StoreState {
       const parsed = JSON.parse(raw) as StoreState
       // Minimal shape guard: if the schema drifts, fall back to seed data.
       if (parsed && parsed.profile && Array.isArray(parsed.bookings) && Array.isArray(parsed.links)) {
-        return parsed
+        // Re-apply seed defaults for any fields added after the state was first
+        // persisted (e.g. profile.payoutPrefs), so the shape stays complete.
+        return {
+          ...initialState,
+          ...parsed,
+          profile: { ...initialState.profile, ...parsed.profile },
+          notificationPrefs: {
+            email: { ...initialState.notificationPrefs.email, ...parsed.notificationPrefs?.email },
+            push: { ...initialState.notificationPrefs.push, ...parsed.notificationPrefs?.push },
+            schedule: { ...initialState.notificationPrefs.schedule, ...parsed.notificationPrefs?.schedule },
+          },
+        }
       }
     }
   } catch {

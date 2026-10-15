@@ -60,7 +60,7 @@ export function selectPayoutSummary(state: StoreState) {
     paidLifetime: round(completed.reduce((s, p) => s + p.amount, 0)),
     completedCount: completed.length,
     failedCount: failed.length,
-    minPayout: 500
+    minPayout: state.profile.payoutPrefs?.minPayout ?? 500
   }
 }
 

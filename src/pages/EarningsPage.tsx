@@ -25,6 +25,15 @@ import { ghs, formatDate, downloadCsv } from '../lib/format'
 import Kpi from '../components/ui/Kpi'
 
 type Range = 'week' | 'month' | 'quarter' | 'all'
+type TxFilter = 'all' | 'accrual' | 'bonus' | 'payout' | 'reversal'
+
+const TX_FILTERS: { id: TxFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'accrual', label: 'Commission' },
+  { id: 'bonus', label: 'Bonus' },
+  { id: 'payout', label: 'Payout' },
+  { id: 'reversal', label: 'Reversal' },
+]
 
 const stagger = { show: { transition: { staggerChildren: 0.08 } } }
 const item = {
@@ -49,6 +58,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function EarningsPage() {
   const { state } = useStore()
   const [range, setRange] = useState<Range>('all')
+  const [typeFilter, setTypeFilter] = useState<TxFilter>('all')
 
   const earnings = useMemo(() => selectEarningsSummary(state), [state])
   const kpis = useMemo(() => selectOverviewKpis(state), [state])
@@ -88,15 +98,19 @@ export default function EarningsPage() {
   }
 
   const filteredTx = useMemo(() => {
-    if (range === 'all') return state.transactions
-    const today = new Date(`${DATASET_TODAY}T00:00:00`)
-    let from = new Date(today)
-    if (range === 'week') from.setDate(today.getDate() - 7)
-    if (range === 'month') from = new Date(today.getFullYear(), today.getMonth(), 1)
-    if (range === 'quarter') from = new Date(today.getFullYear(), today.getMonth() - 2, 1)
-    const fromStr = from.toISOString().slice(0, 10)
-    return state.transactions.filter((t) => t.date >= fromStr)
-  }, [state.transactions, range])
+    let tx = state.transactions
+    if (range !== 'all') {
+      const today = new Date(`${DATASET_TODAY}T00:00:00`)
+      let from = new Date(today)
+      if (range === 'week') from.setDate(today.getDate() - 7)
+      if (range === 'month') from = new Date(today.getFullYear(), today.getMonth(), 1)
+      if (range === 'quarter') from = new Date(today.getFullYear(), today.getMonth() - 2, 1)
+      const fromStr = from.toISOString().slice(0, 10)
+      tx = tx.filter((t) => t.date >= fromStr)
+    }
+    if (typeFilter !== 'all') tx = tx.filter((t) => t.type === typeFilter)
+    return tx
+  }, [state.transactions, range, typeFilter])
 
   const exportStatement = () => {
     downloadCsv(
@@ -239,8 +253,26 @@ export default function EarningsPage() {
             <Download size={14} /> Export CSV
           </button>
         </div>
+        <div style={{ display: 'flex', gap: 6, padding: '12px 24px 0', overflowX: 'auto' }}>
+          {TX_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setTypeFilter(f.id)}
+              style={{
+                padding: '5px 12px', borderRadius: 'var(--r-pill)', fontSize: 12, fontWeight: 700,
+                fontFamily: 'var(--font-display)', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.15s',
+                background: typeFilter === f.id ? 'var(--green)' : 'var(--bg-paper)',
+                color: typeFilter === f.id ? '#fff' : 'var(--text-secondary)',
+                border: '1px solid ' + (typeFilter === f.id ? 'var(--green)' : 'var(--border)'),
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
         <div className="table-scroll" style={{ marginTop: 12 }}>
-          <table className="table table-card">
+          <table className="table table-card" style={filteredTx.length === 0 ? { display: 'none' } : undefined}>
             <thead>
               <tr>
                 <th>Date</th>
@@ -268,6 +300,11 @@ export default function EarningsPage() {
             </tbody>
           </table>
         </div>
+        {filteredTx.length === 0 && (
+          <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+            No transactions match these filters.
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

@@ -13,7 +13,7 @@ import {
   MapPin,
 } from 'lucide-react'
 import { useStore } from '../store/store'
-import { selectOverviewKpis } from '../store/selectors'
+import { selectOverviewKpis, DATASET_TODAY } from '../store/selectors'
 import { ghs, formatNumber, formatDate, downloadCsv } from '../lib/format'
 import StatusBadge from '../components/ui/StatusBadge'
 import Kpi from '../components/ui/Kpi'
@@ -22,6 +22,11 @@ import EmptyState from '../components/ui/EmptyState'
 import type { Booking } from '../store/types'
 
 const STATUS_FILTERS = ['All', 'Confirmed', 'Pending', 'Cancelled']
+const RANGE_FILTERS: { id: string; label: string }[] = [
+  { id: 'all', label: 'All time' },
+  { id: 'month', label: 'This month' },
+  { id: 'quarter', label: 'Last 3 months' },
+]
 
 const stagger = { show: { transition: { staggerChildren: 0.06 } } }
 const item = {
@@ -166,6 +171,8 @@ export default function BookingsPage() {
   const { state } = useStore()
   const [statusFilter, setStatusFilter] = useState('All')
   const [search, setSearch] = useState('')
+  const [tourFilter, setTourFilter] = useState('All')
+  const [rangeFilter, setRangeFilter] = useState('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const kpis = useMemo(() => selectOverviewKpis(state), [state])
@@ -187,15 +194,26 @@ export default function BookingsPage() {
     [state]
   )
 
+  const dateFrom = useMemo(() => {
+    if (rangeFilter === 'all') return null
+    const today = new Date(`${DATASET_TODAY}T00:00:00`)
+    let from = new Date(today)
+    if (rangeFilter === 'month') from = new Date(today.getFullYear(), today.getMonth(), 1)
+    if (rangeFilter === 'quarter') from = new Date(today.getFullYear(), today.getMonth() - 2, 1)
+    return from.toISOString().slice(0, 10)
+  }, [rangeFilter])
+
   const filtered = useMemo(() => {
     let result = rows
     if (statusFilter !== 'All') result = result.filter((r) => r.booking.status === statusFilter.toLowerCase())
+    if (tourFilter !== 'All') result = result.filter((r) => r.booking.tourId === tourFilter)
+    if (dateFrom) result = result.filter((r) => r.booking.date >= dateFrom)
     if (search) {
       const q = search.toLowerCase()
       result = result.filter((r) => r.tour.toLowerCase().includes(q) || r.booking.ref.toLowerCase().includes(q))
     }
     return result
-  }, [rows, statusFilter, search])
+  }, [rows, statusFilter, tourFilter, dateFrom, search])
 
   // Stats respect the active filter (single source of truth = `filtered`)
   const stats = useMemo(() => {
@@ -211,8 +229,16 @@ export default function BookingsPage() {
     }
   }, [filtered])
 
-  const filtersActive = statusFilter !== 'All' || search.trim() !== ''
+  const filtersActive = statusFilter !== 'All' || tourFilter !== 'All' || rangeFilter !== 'all' || search.trim() !== ''
   const period = filtersActive ? 'filtered selection' : kpis.periodLabel
+
+  const clearFilters = () => { setStatusFilter('All'); setTourFilter('All'); setRangeFilter('all'); setSearch('') }
+
+  // Only tours that actually have bookings, so the dropdown is never empty.
+  const tourOptions = useMemo(
+    () => state.tours.filter((t) => state.bookings.some((b) => b.tourId === t.id)),
+    [state.tours, state.bookings]
+  )
 
   const exportCsv = () => {
     downloadCsv(
@@ -293,6 +319,29 @@ export default function BookingsPage() {
               </button>
             ))}
           </div>
+          <select
+            className="select"
+            value={tourFilter}
+            onChange={(e) => setTourFilter(e.target.value)}
+            aria-label="Filter by tour"
+            style={{ height: 38, fontSize: 13, maxWidth: 200 }}
+          >
+            <option value="All">All tours</option>
+            {tourOptions.map((t) => (
+              <option key={t.id} value={t.id}>{t.title}</option>
+            ))}
+          </select>
+          <select
+            className="select"
+            value={rangeFilter}
+            onChange={(e) => setRangeFilter(e.target.value)}
+            aria-label="Filter by date range"
+            style={{ height: 38, fontSize: 13, maxWidth: 170 }}
+          >
+            {RANGE_FILTERS.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600 }}>
             {formatNumber(filtered.length)} booking{filtered.length === 1 ? '' : 's'}
@@ -319,7 +368,7 @@ export default function BookingsPage() {
             description="Try adjusting your filters or share more referral links."
             action={
               filtersActive ? (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setStatusFilter('All'); setSearch('') }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>
                   Clear filters
                 </button>
               ) : undefined
